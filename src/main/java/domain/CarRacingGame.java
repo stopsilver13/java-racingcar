@@ -4,7 +4,7 @@
  *
  * ver 1.0
  *
- * 2019/04/24
+ * 2019/04/04
  *
  * Copyright 2019. Jieun Jeong. All ringts reserved.
  */
@@ -12,94 +12,96 @@
 package domain;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class CarRacingGame {
-    private static boolean checkNameLength(String[] carName) {
-        boolean checkResult = true;
+    public static String[] inputCarNames() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("경주할 자동차의 이름을 입력하세요.(이름은 쉼표(,) 기준으로 구분) \n");
+        String input = scanner.nextLine();
+        String[] carNames = input.split(",");
 
-        for (String e : carName) {
-            if (e.length() > 5) {
-                checkResult = false;
-            }
-        }
-
-        return checkResult;
+        return carNames;
     }
 
-    public static void showTrace(Car car) {
-        int oldPosition = car.getPosition();
-        int newPosition = oldPosition;
+    public static List<Car> generateCarInstance() {
+        String[] carNames = inputCarNames();
+        List<Car> cars = new ArrayList<>();
 
-        if (car.tryRun()) {
-            newPosition = oldPosition + 1;
-            car.setPosition(newPosition);
-        }
-
-        String progress = new String(new char[newPosition]).replace("\0", "-");
-
-        System.out.println(String.format("%s : %s", car.getName(), progress));
-    }
-
-    private static String getWinner(ArrayList<Car> carList) {
-        int maxPosition = 0;
-
-        for (Car e : carList) {
-            if (e.getPosition() > maxPosition) {
-                maxPosition = e.getPosition();
+        for (String name : carNames) {
+            try {
+                Car car = new Car(name);
+                cars.add(car);
+            } catch (IllegalArgumentException e) {
+                return generateCarInstance();
             }
         }
-
-        String winner = "";
-
-        for (Car e : carList) {
-            if (e.getPosition() == maxPosition) {
-                winner = winner + e.getName() + " ";
-            }
-        }
-
-        return winner;
+        return cars;
     }
 
-
-    public static void main(String[] args) {
-        boolean isRightNames = false;
-        String[] carName = new String[0];
-
-        while (!isRightNames) {
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("경주할 자동차의 이름을 입력하세요.(이름은 쉼표(,) 기준으로 구분) \n");
-            String input = scanner.nextLine();
-
-            carName = input.split(",");
-
-            isRightNames = checkNameLength(carName);
+    public static boolean isNumber(String string) {
+        try {
+            Integer.parseInt(string);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
+    }
 
-        ArrayList<Car> carList = new ArrayList<>();
-
-        for (String e : carName) {
-            Car car = new Car(e);
-
-            carList.add(car);
-        }
-
+    public static int inputTrialNumber() {
         Scanner scanner = new Scanner(System.in);
         System.out.print("시도할 횟수는 몇회인가요? \n");
-        int trialNumber = scanner.nextInt();
+        String trialNumber = scanner.nextLine();
 
-        System.out.println("\n실행 결과");
+        if (isNumber(trialNumber)) {
+            return Integer.parseInt(trialNumber);
+        } else {
+            System.out.println("숫자로 입력해주세요.");
+            return inputTrialNumber();
+        }
+    }
 
+    public static void showResult(List<Car> cars, int trialNumber) {
         for (int i = 0; i < trialNumber; i++) {
-            for (Car e : carList) {
-                showTrace(e);
+            for (Car car : cars) {
+                car.showTrace(car.tryRun());
             }
+            System.out.println();
+        }
+    }
 
-            System.out.println("\n");
+    public static int getMaxPosition(List<Car> cars) {
+        int maxPosition = 0;
+
+        for (Car car : cars) {
+            if (car.getPosition() > maxPosition) {
+                maxPosition = car.getPosition();
+            }
+        }
+        return maxPosition;
+    }
+
+    public static void showWinner(List<Car> cars) {
+        int maxPosition = getMaxPosition(cars);
+        List<String> winners = new ArrayList<>();
+
+        for (Car car : cars) {
+            if (car.isMaxPosition(maxPosition)) {
+                winners.add(car.getName());
+            }
         }
 
-        String winner = getWinner(carList);
+        String winner = String.join(",", winners);
+        System.out.println(String.format("\n%s가 최종 우승했습니다.", winner));
+    }
 
-        System.out.println(winner + "가 최종 우승했습니다.");
+    public static void main(String[] args) {
+        List<Car> cars = generateCarInstance();
+        int trialNumber = inputTrialNumber();
+
+        System.out.println("\n실행 결과");
+        showResult(cars, trialNumber);
+        showWinner(cars);
     }
 }
